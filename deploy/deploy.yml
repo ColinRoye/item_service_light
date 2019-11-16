@@ -13,9 +13,10 @@
         dest: /app
         force: yes
     - name: 
-      shell: cd /app 
-	     && curl -sL https://deb.nodesource.com/setup_11.x | bash -
-	     && sudo apt install nodejs
-	     && npm install
-	     && nohup node server.js&
+      shell: 'cd /app 
+	      && sudo -su
+	      && curl -sL https://deb.nodesource.com/setup_11.x | bash -
+	      && sudo apt install nodejs
+	      && npm install
+	      && nohup node server.js&'
      

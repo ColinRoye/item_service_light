@@ -26,7 +26,7 @@ module.exports={
             timestamp: (new Date() / 1000),
             id: id
         }
-        let url = env.baseUrl + "/used/" + media + "/" + req.cookies['auth'];
+        let url = env.baseUrl + "/used/" + media + "/" + username;
         let check = -1;
         if(media){
           for(let i=0; i < media.length; i++){
