@@ -99,19 +99,22 @@ module.exports={
           let queryBody ={
                query: {
                     bool:{
-                         must:[{
-                                   range : {
-                                        timestamp : {
-                                             lte : timestamp
+                         must:[
+                                   {
+                                        range : {
+                                             timestamp : {
+                                                  lte : timestamp
+                                             }
                                         }
                                    }
-                              }],
+                              ],
                          must_not:[]
                     }
                }
           }
           if(following || following == undefined || following == 'true'){
-               if(service.authorize(req.cookies["auth"])){
+               debug.log("Check if there is a current user when 'following' marked true in search: " + currentUser)
+               if(currentUser){
                     let url = env.baseUrl + "/user/" + currentUser +  '/following'
                     followingArray = (await axios.get(url)).data.users;
                     let followstr = ''
@@ -125,6 +128,12 @@ module.exports={
                          }
                     })
                }
+               else{
+                    debug.log("not authorized, cant use following in search");
+               }
+          }
+          else{
+               debug.log("following is false");
           }
           
           if(queryString){
@@ -142,29 +151,30 @@ module.exports={
                    }
                })
           }
-
+          
           if(hasMedia){
                queryBody.query.bool.must_not.push({
                     match : {
                          media : "empty"
                     }
-               })
+               });
           }
-
+          /*
           if(parent != "none" || parent != undefined){
                queryBody.query.bool.must.push({
                     match: {
                          id : parent 
                     }
-               })
+               });
           }
+          */
 
           if(replies === false){
                queryBody.query.bool.must_not.push({
                     match : {
                          childType: "reply"
                     }
-               })
+               });
           }
 
           if(rank === "time"){
@@ -174,6 +184,7 @@ module.exports={
           else if(rank === "interest" || rank == undefined){
                queryBody.sort = [{"property.likes" : "desc"}]
           }
+          
 
           //TODO
           debug.log("queryBody" + JSON.stringify(queryBody))
@@ -334,26 +345,36 @@ module.exports={
                          debug.log("User does not exist in array, so add it");
                          getItemResult.item.property.likes += 1;
                          usersLiked.push(currentUser);
+                         console.log("usersLiked array " + usersLiked);
+                         console.log("updated property field of the item" + JSON.stringify(getItemResult.item.property));
+                         console.log("The item to like : " + JSON.stringify(getItemResult.item));
+                         if(!usersLiked){
+                              usersLikedAssignment = []
+                         }
+                         else{ usersLikedAssignment = usersLiked;}
                          var sourceData = {
                               doc: {
                                    "id": getItemResult.item.id,
                                    "content": getItemResult.item.content,
                                    "username": getItemResult.item.username,
                                    "timestamp": getItemResult.item.timestamp,
-                                   "retweets": getItemResult.item.retweets,
+                                   "retweeted": getItemResult.item.retweets,
                                    "property": getItemResult.item.property,
-                                   "usersWhoLiked": usersLiked,
-                                   "media": getItemResult.media,
-                                   "parent": getItemResult.parent
+                                   "usersWhoLiked": usersLikedAssignment,
+                                   "media": getItemResult.item.media,
                               }
                          };
+                         
+                         console.log("Source data for like item is " + sourceData);
                          var docParam = {
                               id: getItemResult.item.id,
                               index: index,
                               type: type,
                               body: sourceData
                          }
-                         var response = await client.update(docParam, sourceData);
+                         var response = await client.update(docParam, sourceData).catch(err =>{
+                              debug.log(err);
+                         });
                          debug.log("The response from update was" + JSON.stringify(response));
                     }
                     debug.log("Current list of likes is " + getItemResult.usersWhoLiked);
@@ -377,11 +398,11 @@ module.exports={
                                    "content": getItemResult.item.content,
                                    "username": getItemResult.item.username,
                                    "timestamp": getItemResult.item.timestamp,
-                                   "retweets": getItemResult.item.retweets,
+                                   "retweeted": getItemResult.item.retweets,
                                    "property": getItemResult.item.property,
                                    "usersWhoLiked": usersLikedAssignment,
-                                   "media": getItemResult.media,
-                                   "parent": getItemResult.parent
+                                   "media": getItemResult.item.media,
+                                   "parent": getItemResult.item.parent
                               }
                          };
                          var docParam = {
@@ -390,9 +411,9 @@ module.exports={
                               type: type,
                               body: sourceData
                          };
-                         var response = await client.update(docParam, sourceData)/*.catch(err =>{
+                         var response = await client.update(docParam, sourceData).catch(err =>{
                               debug.log(err);
-                         }); */
+                         }); 
                          debug.log("The response from update " + JSON.stringify(response));
 
                     }

@@ -77,7 +77,7 @@ router.post('/item/:id/like', async(req,res,next)=>{
           let args = req.params;
           let body = req.body;
           let ret = await service.likeItem(args.id, body.like, req.cookies["auth"]);
-          debug.log("Return of like item " + ret)
+          debug.log("Return of like item " + JSON.stringify(ret))
           ret = {status: env.statusOk.status, msg:"Item liked/unliked!" };
           res.send(ret);
      }
