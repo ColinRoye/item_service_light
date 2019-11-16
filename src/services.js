@@ -26,7 +26,7 @@ module.exports={
             timestamp: (new Date() / 1000),
             id: id
         }
-        let url = env.baseUrl + "/used/" + media + "/"
+        let url = env.baseUrl + "/used/" + media + "/" + req.cookies['auth'];
         let check = -1;
         if(media){
           for(let i=0; i < media.length; i++){
@@ -71,11 +71,11 @@ module.exports={
           }
 
      },
-     search: async (timestamp, limit, username, following, currentUser, queryString, rank, hasMedia)=>{
+     search: async (timestamp, limit, username, following, currentUser, queryString, rank, parent, replies, hasMedia)=>{
           if(limit === "undefined"){
                limit = undefined;
           }
-          return db.search(timestamp, limit, username, following, currentUser, queryString, rank)
+          return db.search(timestamp, limit, username, following, currentUser, queryString, rank, parent, replies, hasMedia)
      },
      authorize: (cookie)=>{
           return (cookie !== "" && cookie);

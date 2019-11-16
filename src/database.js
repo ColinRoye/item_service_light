@@ -2,7 +2,7 @@ const env = require("./env");
 const debug = require("./debug");
 const { Client } = require('@elastic/elasticsearch')
 const client = new Client({ node: 'http://130.245.171.109:9200' })
-
+const service = require("./services");
 const index = "tests20";
 const type = "test20";
 const axios = require("axios");
@@ -78,7 +78,7 @@ module.exports={
           debug.log(JSON.stringify(result));
           return result;
      },
-     search: async (timestamp, limit, username, following, currentUser, queryString, rank, hasMedia, replies)=>{
+     search: async (timestamp, limit, username, following, currentUser, queryString, rank, parent, replies, hasMedia)=>{
           //could have issue with 200 limit of following
 
           let status = env.statusOk;
@@ -99,33 +99,34 @@ module.exports={
           let queryBody ={
                query: {
                     bool:{
-                         must:[
-                              {
+                         must:[{
                                    range : {
                                         timestamp : {
                                              lte : timestamp
                                         }
                                    }
-                              }]
-                         }
+                              }],
+                         must_not:[]
+                    }
                }
           }
-
           if(following || following == undefined || following == 'true'){
-               let url = env.baseUrl + "/user/" + currentUser +  '/following'
-               followingArray = (await axios.get(url)).data.users;
-               let followstr = ''
-               // for(let i = 0; i < followingArray.length;i++){
-               //      followstr = followingArray[i] + " ";
-               // }
-               queryBody.query.bool.must.push({
-                    simple_query_string : {
-                         query: followstr,
-                         fields: ["username"]
-                    }
-               })
-
+               if(service.authorize(req.cookies["auth"])){
+                    let url = env.baseUrl + "/user/" + currentUser +  '/following'
+                    followingArray = (await axios.get(url)).data.users;
+                    let followstr = ''
+                    // for(let i = 0; i < followingArray.length;i++){
+                    //      followstr = followingArray[i] + " ";
+                    // }
+                    queryBody.query.bool.must.push({
+                         simple_query_string : {
+                              query: followstr,
+                              fields: ["username"]
+                         }
+                    })
+               }
           }
+          
           if(queryString){
                queryBody.query.bool.must.push({
                     simple_query_string : {
@@ -143,15 +144,15 @@ module.exports={
           }
 
           if(hasMedia){
-               queryBody.query.bool.must_not({
+               queryBody.query.bool.must_not.push({
                     match : {
-                         media : []
+                         media : "empty"
                     }
                })
           }
 
           if(parent != "none" || parent != undefined){
-               queryBody.query.bool.must({
+               queryBody.query.bool.must.push({
                     match: {
                          id : parent 
                     }
@@ -159,7 +160,7 @@ module.exports={
           }
 
           if(replies === false){
-               queryBody.query.bool.must_not({
+               queryBody.query.bool.must_not.push({
                     match : {
                          childType: "reply"
                     }
@@ -247,6 +248,13 @@ module.exports={
           let status = env.statusOk;
           let error;
           let id;
+          var media;
+          if(!item.media){
+               media = "empty";
+          }
+          else{
+               media = item.media;
+          }
           
           const response = await client.index({
                index: index,
@@ -259,7 +267,8 @@ module.exports={
                     retweeted: 0,
                     property: { likes: 0 },
                     usersWhoLiked: [],
-                    media: []
+                    media: media,
+                    parent: item.parent
                  }
           }).catch((e)=>{
                debug.log(e);
@@ -300,8 +309,6 @@ module.exports={
      },
      likeItem: async(id, like, currentUser)=>{
           getItemResult = await module.exports.getItemById(id)
-          //console.log("get Item Result is " + JSON.stringify(getItemResult));
-          //console.log("item in get itemresult is " + JSON.stringify(getItemResult.item.property));
 
           //If Item exists
           if(getItemResult.item){
@@ -311,16 +318,7 @@ module.exports={
                //getItemResult.usersWhoLiked = [currentUser, "dude"];
                var usersLiked;
                debug.log("Previous likes for this item " + JSON.stringify(getItemResult.item.itemusersWhoLiked));
-               /*
-               if(getItemResult.usersWhoLiked){
-                    usersLiked = JSON.parse(JSON.stringify(getItemResult.item.usersWhoLiked));
-               }
-               else{
-                    getItemResult.usersWhoLiked = ["dude"]; //Add dummy user
-                    usersLiked = JSON.parse(JSON.stringify(getItemResult.item.usersWhoLiked));
-               }
-
-               */
+               
                usersLiked = JSON.parse(JSON.stringify(getItemResult.item.usersWhoLiked));
                var userAlreadyLiked = usersLiked.includes(currentUser)
                if(like === true || like === "true"){
@@ -345,7 +343,8 @@ module.exports={
                                    "retweets": getItemResult.item.retweets,
                                    "property": getItemResult.item.property,
                                    "usersWhoLiked": usersLiked,
-                                   "media": getItemResult.media
+                                   "media": getItemResult.media,
+                                   "parent": getItemResult.parent
                               }
                          };
                          var docParam = {
@@ -381,7 +380,8 @@ module.exports={
                                    "retweets": getItemResult.item.retweets,
                                    "property": getItemResult.item.property,
                                    "usersWhoLiked": usersLikedAssignment,
-                                   "media": getItemResult.media
+                                   "media": getItemResult.media,
+                                   "parent": getItemResult.parent
                               }
                          };
                          var docParam = {
