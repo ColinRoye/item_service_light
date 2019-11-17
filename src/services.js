@@ -9,6 +9,9 @@ module.exports={
      getAll: async()=>{
 	      return await db.getAll();
      },
+     retweet: async (parent, username)=>{
+       db.retweet(parent, username)
+     },
      addItem: async (content, childType, parent, media, username)=>{
         let id = uuid();
 	      let ret = {};

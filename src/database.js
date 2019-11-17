@@ -1,11 +1,13 @@
 const env = require("./env");
 const debug = require("./debug");
-const { Client } = require('@elastic/elasticsearch')
+const { Client,  RequestParams } = require('@elastic/elasticsearch')
 const client = new Client({ node: 'http://130.245.171.109:9200' })
 const service = require("./services");
-const index = "tests20";
-const type = "test20";
+const index = "tests200";
+const type = "test200";
 const axios = require("axios");
+
+
 
 //define database specific tasks here
 module.exports={
@@ -32,6 +34,7 @@ module.exports={
           })
           if(response && response.body && response.body.hits.hits[0]){
                item = response.body.hits.hits[0]._source;
+               debug.log(JSON.stringify(response.body.hits.hits[0))
                debug.log("item: " + JSON.stringify(item));
           }
 	  if(item){
@@ -158,7 +161,7 @@ module.exports={
                     }
                })
           }
-          
+
           if(replies === false){
                queryBody.query.bool.must_not.push({
                     match : {
@@ -414,5 +417,47 @@ module.exports={
                //Return error
           }
           return {}
+     },
+     retweet: async(id, currentUser)=>{
+          getItemResult = await module.exports.getItemById(id)
+          debug.log("getitem res: " + JSON.stringify(getItemResult));
+          if(getItemResult && getItemResult.item){
+            debug.log("test")
+            getItemResult.item.retweeted += 1;
+            let item = getItemResult.item
+            debug.log(type)
+            debug.log(index)
+          }
+
+            const updateParam = RequestParams.Update = {
+                  id: '111',
+                  index: 'myIndex',
+                  body: {doc:{
+
+                         // content: item.content,
+                         childType: item.childType,
+                         username: item.username,
+                         timestamp: item.timestamp,
+                         retweeted: 0,
+                         property: { likes: 0 },
+                         usersWhoLiked: [],
+                         media: 'empty',
+                         parent: item.parent
+                      }
+
+                  }
+            }
+
+            var response = await client.update(updateParam).catch(err =>{
+              debug.log(err)
+            })
+            debug.log(response)
+        }
+          else{
+               //Item does not exist
+               //Return error
+          }
+          return {}
      }
+   }
 }
