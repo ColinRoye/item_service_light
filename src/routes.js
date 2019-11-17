@@ -9,6 +9,7 @@ const service = require("./services");
 router.post('/additem', async (req, res, next)=>{
      if(service.authorize(req.cookies["auth"])){
           let args = req.body;
+	  console.log("parent " + args.parent)
 	  debug.log(JSON.stringify(args))
           let username = req.cookies["auth"];
 
@@ -28,8 +29,7 @@ router.post('/additem', async (req, res, next)=>{
 router.get('/item/:id', async (req, res, next)=>{
      let args = req.params;
      let ret = await service.getItemById(args.id);
-     if(ret.item.media === 'empty'){ret.item.media = undefined}
-     ret.item.usersWhoLiked = undefined;
+     if(ret.item && ret.item.media === 'empty'){ret.item.media = undefined; ret.item.usersWhoLiked = undefined;}
      ret.status = ret.status.status
      if(!ret.item){ret.status = env.statusError.status}
      debug.log(ret)

@@ -3,8 +3,8 @@ const debug = require("./debug");
 const { Client,  RequestParams } = require('@elastic/elasticsearch')
 const client = new Client({ node: 'http://130.245.171.109:9200' })
 const service = require("./services");
-const index = "tests200";
-const type = "test200";
+const index = "tests2000";
+const type = "test2000";
 const axios = require("axios");
 
 
@@ -64,7 +64,7 @@ module.exports={
                               id: getItemResult.item.parent,
                               body:{
                                    "script": {
-                                        "source":"ctx._source.retweeted--; ctx._source.usersWhoLiked.add(params.user)",
+                                        "source":"ctx._source.retweeted--;",
                                         "params":{
                                              "user" : username
                                         }
@@ -418,19 +418,23 @@ module.exports={
      retweet: async(id, currentUser)=>{
           getItemResult = await module.exports.getItemById(id)
           debug.log("getitem res: " + JSON.stringify(getItemResult));
-          if(getItemResult && getItemResult.item){
-            var response = await client.update({
+        
+	  if(getItemResult && getItemResult.item){
+            console.log("id in retweet: " + id); 
+	    var response = await client.update({
                               index: index,
                               id:id,
                               body:{
                                    "script": {
-                                        "source":"ctx._source.retweeted++; ctx._source.usersWhoLiked.add(params.user)",
+                                        "source":"ctx._source.retweeted++;",
                                         "params":{
                                              "user" : currentUser
                                         }
                                    }
                               }
-                         });
+                         }).catch((err)=>{console.log(err)});;
+				  console.log("end update");
+
           }
           else{
                //Item does not exist
