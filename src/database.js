@@ -34,7 +34,7 @@ module.exports={
           })
           if(response && response.body && response.body.hits.hits[0]){
                item = response.body.hits.hits[0]._source;
-               debug.log(JSON.stringify(response.body.hits.hits[0))
+               debug.log(JSON.stringify(response.body.hits.hits[0]))
                debug.log("item: " + JSON.stringify(item));
           }
 	  if(item){
@@ -49,12 +49,31 @@ module.exports={
           debug.log(JSON.stringify(result));
           return result;
      },
-     deleteItemById: async (id)=>{
+     deleteItemById: async (id, username, itemIn)=>{
           let status = env.statusOk;
           let error;
           let item;
           //post to image_service
           debug.log("DATABASE_DELETE: deleteItemById")
+          getItemResult = itemIn
+          debug.log(JSON.stringify(getItemResult))
+          if(getItemResult.item.childType === "retweet") {
+            debug.log("DELETEING RETWEET BITCH")
+            var res2 = await client.update({
+                              index: index,
+                              id: getItemResult.item.parent,
+                              body:{
+                                   "script": {
+                                        "source":"ctx._source.retweeted--; ctx._source.usersWhoLiked.add(params.user)",
+                                        "params":{
+                                             "user" : username
+                                        }
+                                   }
+                              }
+                  });
+          }
+
+
           const response = await client.deleteByQuery({
                index: index,
                type: type,
@@ -71,6 +90,7 @@ module.exports={
                status = env.statusError;
                error = "error";
           })
+
 
           let result = {
                status: status,
@@ -422,37 +442,19 @@ module.exports={
           getItemResult = await module.exports.getItemById(id)
           debug.log("getitem res: " + JSON.stringify(getItemResult));
           if(getItemResult && getItemResult.item){
-            debug.log("test")
-            getItemResult.item.retweeted += 1;
-            let item = getItemResult.item
-            debug.log(type)
-            debug.log(index)
+            var response = await client.update({
+                              index: index,
+                              id:id,
+                              body:{
+                                   "script": {
+                                        "source":"ctx._source.retweeted++; ctx._source.usersWhoLiked.add(params.user)",
+                                        "params":{
+                                             "user" : currentUser
+                                        }
+                                   }
+                              }
+                         });
           }
-
-            const updateParam = RequestParams.Update = {
-                  id: '111',
-                  index: 'myIndex',
-                  body: {doc:{
-
-                         // content: item.content,
-                         childType: item.childType,
-                         username: item.username,
-                         timestamp: item.timestamp,
-                         retweeted: 0,
-                         property: { likes: 0 },
-                         usersWhoLiked: [],
-                         media: 'empty',
-                         parent: item.parent
-                      }
-
-                  }
-            }
-
-            var response = await client.update(updateParam).catch(err =>{
-              debug.log(err)
-            })
-            debug.log(response)
-        }
           else{
                //Item does not exist
                //Return error
@@ -460,4 +462,3 @@ module.exports={
           return {}
      }
    }
-}

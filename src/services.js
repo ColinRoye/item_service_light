@@ -64,7 +64,7 @@ module.exports={
           let ret = {};
           debug.log("DELETE_SERVICE: ITEM "+ JSON.stringify(item))
           if(item.item && item.item.username === username){
-               ret = await db.deleteItemById(id);
+               ret = await db.deleteItemById(id, username, item);
                debug.log("DELETEING ITEM: " + ret);
 
                return ret;
