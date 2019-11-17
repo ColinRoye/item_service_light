@@ -28,8 +28,13 @@ router.post('/additem', async (req, res, next)=>{
 router.get('/item/:id', async (req, res, next)=>{
      let args = req.params;
      let ret = await service.getItemById(args.id);
-     if(ret.item.media === 'empty'){ret.item.media = undefined}
-     ret.item.usersWhoLiked = undefined;
+     console.log("ret in get item" + JSON.stringify(ret));
+     if(ret.item){
+          if(ret.item.media === 'empty'){ret.item.media = undefined}
+          ret.item.usersWhoLiked = undefined;
+     }
+     
+     
      ret.status = ret.status.status
      if(!ret.item){ret.status = env.statusError.status}
      debug.log(ret)

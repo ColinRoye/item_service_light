@@ -26,9 +26,10 @@ module.exports={
             username: username,
             parent: parent,
             media: media,
-            timestamp: (new Date() / 1000),
+            timestamp: (new Date()),
             id: id
         }
+        console.log("before adding item, this is the item body: " + JSON.stringify(item));
         let url = env.baseUrl + "/used/" + media + "/" + username;
         let check = -1;
         if(media){
@@ -49,11 +50,12 @@ module.exports={
         ret = await db.addItem(item);
         return ret;
     },
+    /*
     getItemById: async (id)=>{
         let ret = await db.getItemById(id);
         debug.log("RETURNING ITEM: " + ret);
         return ret;
-    },
+    },*/
     getItemById: async (id)=>{
         let ret = await db.getItemById(id);
         debug.log("GETTING ITEM: " + ret);

@@ -3,8 +3,8 @@ const debug = require("./debug");
 const { Client,  RequestParams } = require('@elastic/elasticsearch')
 const client = new Client({ node: 'http://130.245.171.109:9200' })
 const service = require("./services");
-const index = "tests200";
-const type = "test200";
+const index = "tests2002";
+const type = "tests2002";
 const axios = require("axios");
 
 
@@ -32,14 +32,23 @@ module.exports={
                status = env.statusError;
                error = "error";
           })
+          console.log("response in get item" + JSON.stringify(response.body));
           if(response && response.body && response.body.hits.hits[0]){
                item = response.body.hits.hits[0]._source;
                debug.log(JSON.stringify(response.body.hits.hits[0]))
                debug.log("item: " + JSON.stringify(item));
           }
-	  if(item){
-	       item.id = id
-	  }
+          console.log("the item is " + JSON.stringify(item));
+	     if(item){
+               item.id = id;
+               debug.log("the timestamp is " + item.timestamp);
+               var convertDate = new Date(item.timestamp);
+               var unixConvertDate = convertDate/1000;
+               debug.log("change timestamp" + convertDate);
+               debug.log("converted to " + unixConvertDate);
+               item.timestamp = unixConvertDate;
+               //item.timestamp = item.timestamp/1000;
+	     }
           let result = {
                status: status,
                item: item,
@@ -107,6 +116,7 @@ module.exports={
           let status = env.statusOk;
           let error;
           let item;
+          var applyTimestamp;
           debug.log("qs: "+ queryString)
 
           if(!limit){
@@ -117,7 +127,10 @@ module.exports={
                limit = 100;
           }
           if(!timestamp){
-               timestamp = (new Date() / 1000)
+               applyTimestamp = (new Date())
+          }
+          else{
+               applyTimestamp = timestamp
           }
           let queryBody ={
                query: {
@@ -126,7 +139,7 @@ module.exports={
                                    {
                                         range : {
                                              timestamp : {
-                                                  lte : timestamp
+                                                  lte : (applyTimestamp/1000)*1000
                                              }
                                         }
                                    }
@@ -232,6 +245,11 @@ module.exports={
                return response.body.hits.hits.map((elm)=>{
                     let ret = elm._source;
                     ret.id = elm._id;
+                    var convertDate = new Date(ret.timestamp);
+                    var unixConvertDate = convertDate/1000;
+                    debug.log("change timestamp in search" + convertDate);
+                    debug.log("converted to unix, in search " + unixConvertDate);
+                    ret.timestamp = unixConvertDate
                     //debug.log("response element is  " + elm);
                     debug.log("ret is " + ret);
 	               return ret;
@@ -291,7 +309,7 @@ module.exports={
           else{
                media = item.media;
           }
-
+          debug.log("before adding item, " + JSON.stringify(item));
           const response = await client.index({
                index: index,
                type: type,
@@ -311,10 +329,13 @@ module.exports={
                status = env.statusError;
                error = "error";
           })
-          if(response.body){
-               id = response.body._id
-               debug.log(id);
+          if(response){
+               if(response.body){
+                    id = response.body._id
+                    debug.log(id);
+               }
           }
+          
           let result = {
                status: status,
                id: id,
