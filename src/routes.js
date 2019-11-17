@@ -9,18 +9,27 @@ const service = require("./services");
 router.post('/additem', async (req, res, next)=>{
      if(service.authorize(req.cookies["auth"])){
           let args = req.body;
+	  debug.log(JSON.stringify(args))
           let username = req.cookies["auth"];
+
           let ret = await service.addItem(args.content, args.childType, args.parent, args.media, username);
-	  ret.status = ret.status.status
+
+	        ret.status = ret.status.status
+          if(args.childType === 'retweet'){
+            service.retweet(args.parent, req.cookies["auth"]);
+          }
+          ret.error = "adf"
           res.send(ret);
      }else{
+	  debug.log("fail");
           res.send({status:"error", "error":"Not Authorized"})
      }
 });
 router.get('/item/:id', async (req, res, next)=>{
      let args = req.params;
      let ret = await service.getItemById(args.id);
-
+     if(ret.item.media === 'empty'){ret.item.media = undefined}
+     ret.item.usersWhoLiked = undefined;
      ret.status = ret.status.status
      if(!ret.item){ret.status = env.statusError.status}
      debug.log(ret)
@@ -47,6 +56,7 @@ router.delete('/item/:id', async (req, res, next)=>{
 
 router.post('/search', async (req, res, next)=>{
      let args = req.body;
+     debug.log(req.cookies['auth'])
      console.log(JSON.stringify(args));
      let ret = await service.search(args.timestamp, args.limit, args.username, args.following, req.cookies["auth"], args.q, args.rank, args.parent, args.replies, args.hasMedia);
      //debug.log(ret)

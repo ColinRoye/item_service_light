@@ -9,6 +9,9 @@ module.exports={
      getAll: async()=>{
 	      return await db.getAll();
      },
+     retweet: async (parent, username)=>{
+       db.retweet(parent, username)
+     },
      addItem: async (content, childType, parent, media, username)=>{
         let id = uuid();
 	      let ret = {};
@@ -61,7 +64,7 @@ module.exports={
           let ret = {};
           debug.log("DELETE_SERVICE: ITEM "+ JSON.stringify(item))
           if(item.item && item.item.username === username){
-               ret = await db.deleteItemById(id);
+               ret = await db.deleteItemById(id, username, item);
                debug.log("DELETEING ITEM: " + ret);
 
                return ret;

@@ -1,11 +1,13 @@
 const env = require("./env");
 const debug = require("./debug");
-const { Client } = require('@elastic/elasticsearch')
+const { Client,  RequestParams } = require('@elastic/elasticsearch')
 const client = new Client({ node: 'http://130.245.171.109:9200' })
 const service = require("./services");
-const index = "tests20";
-const type = "test20";
+const index = "tests200";
+const type = "test200";
 const axios = require("axios");
+
+
 
 //define database specific tasks here
 module.exports={
@@ -32,6 +34,7 @@ module.exports={
           })
           if(response && response.body && response.body.hits.hits[0]){
                item = response.body.hits.hits[0]._source;
+               debug.log(JSON.stringify(response.body.hits.hits[0]))
                debug.log("item: " + JSON.stringify(item));
           }
 	  if(item){
@@ -46,12 +49,31 @@ module.exports={
           debug.log(JSON.stringify(result));
           return result;
      },
-     deleteItemById: async (id)=>{
+     deleteItemById: async (id, username, itemIn)=>{
           let status = env.statusOk;
           let error;
           let item;
           //post to image_service
           debug.log("DATABASE_DELETE: deleteItemById")
+          getItemResult = itemIn
+          debug.log(JSON.stringify(getItemResult))
+          if(getItemResult.item.childType === "retweet" && getItemResult.item.parent) {
+            debug.log("DELETEING RETWEET BITCH")
+            var res2 = await client.update({
+                              index: index,
+                              id: getItemResult.item.parent,
+                              body:{
+                                   "script": {
+                                        "source":"ctx._source.retweeted--; ctx._source.usersWhoLiked.add(params.user)",
+                                        "params":{
+                                             "user" : username
+                                        }
+                                   }
+                              }
+                  }).catch((e)=>{console.log(e)});
+          }
+
+
           const response = await client.deleteByQuery({
                index: index,
                type: type,
@@ -68,6 +90,7 @@ module.exports={
                status = env.statusError;
                error = "error";
           })
+
 
           let result = {
                status: status,
@@ -170,7 +193,7 @@ module.exports={
                     }
                });
           }
-          
+
           if(replies === false){
                queryBody.query.bool.must_not.push({
                     match : {
@@ -391,5 +414,28 @@ module.exports={
                //Return error
           }
           return {}
+     },
+     retweet: async(id, currentUser)=>{
+          getItemResult = await module.exports.getItemById(id)
+          debug.log("getitem res: " + JSON.stringify(getItemResult));
+          if(getItemResult && getItemResult.item){
+            var response = await client.update({
+                              index: index,
+                              id:id,
+                              body:{
+                                   "script": {
+                                        "source":"ctx._source.retweeted++; ctx._source.usersWhoLiked.add(params.user)",
+                                        "params":{
+                                             "user" : currentUser
+                                        }
+                                   }
+                              }
+                         });
+          }
+          else{
+               //Item does not exist
+               //Return error
+          }
+          return {}
      }
-}
+   }
