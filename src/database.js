@@ -138,7 +138,7 @@ module.exports={
           else{
                debug.log("following is false");
           }
-          
+
           if(queryString){
                queryBody.query.bool.must.push({
                     simple_query_string : {
@@ -166,11 +166,11 @@ module.exports={
           if(parent != undefined){
                queryBody.query.bool.must.push({
                     match: {
-                         id : parent 
+                         id : parent
                     }
                });
           }
-
+          
           if(replies === false){
                queryBody.query.bool.must_not.push({
                     match : {
@@ -181,7 +181,7 @@ module.exports={
 
           if(rank === "time"){
                queryBody.sort =  [{"timestamp" : "desc"}]
-               
+
           }
           else if(rank === "interest" || rank == undefined){
                queryBody.sort = [{"property.likes" : "desc"}]
@@ -268,7 +268,7 @@ module.exports={
           else{
                media = item.media;
           }
-          
+
           const response = await client.index({
                index: index,
                type: type,
@@ -331,7 +331,7 @@ module.exports={
                //getItemResult.usersWhoLiked = [currentUser, "dude"];
                var usersLiked;
                debug.log("Previous likes for this item " + JSON.stringify(getItemResult.item.itemusersWhoLiked));
-               
+
                usersLiked = JSON.parse(JSON.stringify(getItemResult.item.usersWhoLiked));
                var userAlreadyLiked = usersLiked.includes(currentUser)
                if(like === true || like === "true"){

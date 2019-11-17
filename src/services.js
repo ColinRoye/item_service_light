@@ -30,7 +30,7 @@ module.exports={
         let check = -1;
         if(media){
           for(let i=0; i < media.length; i++){
-            check = (await axios.get('http://hackguy.cse356.compas.cs.stonybrook.edu' + "/used/"+media[i])).data.used
+            check = (await axios.get('http://hackguy.cse356.compas.cs.stonybrook.edu' + "/used/"+media[i]+'/'+username)).data.used
 
             if(check !== '0'){
                 ret.status = env.statusError
