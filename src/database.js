@@ -90,7 +90,7 @@ module.exports={
                limit = 25;
           }
           if(limit > 100){
-               debug.lot("to large");
+               debug.log("to large");
                limit = 100;
           }
           if(!timestamp){
@@ -322,21 +322,17 @@ module.exports={
      },
      likeItem: async(id, like, currentUser)=>{
           getItemResult = await module.exports.getItemById(id)
+          //console.log("get Item Result is " + JSON.stringify(getItemResult));
+          //console.log("item in get itemresult is " + JSON.stringify(getItemResult.item.property));
 
           //If Item exists
           if(getItemResult.item){
-               //getItemResult.usersWhoLiked = [currentUser];
-
-               //usersLiked.push(currentUser);
-               //getItemResult.usersWhoLiked = [currentUser, "dude"];
-               var usersLiked;
                debug.log("Previous likes for this item " + JSON.stringify(getItemResult.item.itemusersWhoLiked));
-
-               usersLiked = JSON.parse(JSON.stringify(getItemResult.item.usersWhoLiked));
+               var usersLiked = JSON.parse(JSON.stringify(getItemResult.item.usersWhoLiked));
                var userAlreadyLiked = usersLiked.includes(currentUser)
                if(like === true || like === "true"){
                     debug.log("Like field is " + like);
-
+                    
                     debug.log("userAlreadyLiked " + userAlreadyLiked);
                     debug.log("usersLiked " + usersLiked);
                     if(userAlreadyLiked){    //Current user already has this item liked
@@ -345,37 +341,17 @@ module.exports={
                     }
                     else{    //Modify DB, as user now likes this item
                          debug.log("User does not exist in array, so add it");
-                         getItemResult.item.property.likes += 1;
-                         usersLiked.push(currentUser);
-                         console.log("usersLiked array " + usersLiked);
-                         console.log("updated property field of the item" + JSON.stringify(getItemResult.item.property));
-                         console.log("The item to like : " + JSON.stringify(getItemResult.item));
-                         if(!usersLiked){
-                              usersLikedAssignment = []
-                         }
-                         else{ usersLikedAssignment = usersLiked;}
-                         var sourceData = {
-                              doc: {
-                                   "id": getItemResult.item.id,
-                                   "content": getItemResult.item.content,
-                                   "username": getItemResult.item.username,
-                                   "timestamp": getItemResult.item.timestamp,
-                                   "retweeted": getItemResult.item.retweets,
-                                   "property": getItemResult.item.property,
-                                   "usersWhoLiked": usersLikedAssignment,
-                                   "media": getItemResult.item.media
-                              }
-                         };
-                         
-                         console.log("Source data for like item is " + sourceData);
-                         var docParam = {
-                              id: getItemResult.item.id,
+                         var response = await client.update({
                               index: index,
-                              type: type,
-                              body: sourceData
-                         }
-                         var response = await client.update(docParam, sourceData).catch(err =>{
-                              debug.log(err);
+                              id,
+                              body:{
+                                   "script": {
+                                        "source":"ctx._source.property.likes++; ctx._source.usersWhoLiked.add(params.user)",
+                                        "params":{
+                                             "user" : currentUser
+                                        }
+                                   }
+                              }
                          });
                          debug.log("The response from update was" + JSON.stringify(response));
                     }
@@ -385,47 +361,25 @@ module.exports={
 
                     if(userAlreadyLiked){
                          debug.log("Time to unlike item");
-                         getItemResult.item.property.likes -= 1;
-                         var indexOfUser = usersLiked.indexOf(currentUser);
-                         if(indexOfUser > -1){ usersLiked.splice(indexOfUser, 1);}
-                         debug.log("After unliking, usersLiked is " + usersLiked);
-                         var usersLikedAssignment;
-                         if(!usersLiked){
-                              usersLikedAssignment = []
-                         }
-                         else{ usersLikedAssignment = usersLiked;}
-                         var sourceData = {
-                              doc: {
-                                   "id": getItemResult.item.id,
-                                   "content": getItemResult.item.content,
-                                   "username": getItemResult.item.username,
-                                   "timestamp": getItemResult.item.timestamp,
-                                   "retweeted": getItemResult.item.retweets,
-                                   "property": getItemResult.item.property,
-                                   "usersWhoLiked": usersLikedAssignment,
-                                   "media": getItemResult.item.media,
-                                   "parent": getItemResult.item.parent
-                              }
-                         };
-                         var docParam = {
-                              id: getItemResult.item.id,
+                         var response = await client.update({
                               index: index,
-                              type: type,
-                              body: sourceData
-                         };
-                         var response = await client.update(docParam, sourceData).catch(err =>{
-                              debug.log(err);
-                         }); 
-                         debug.log("The response from update " + JSON.stringify(response));
-
+                              id,
+                              body:{
+                                   "script": {
+                                        "source": "ctx._source.property.likes--; ctx._source.usersWhoLiked.remove(ctx._source.usersWhoLiked.indexOf(params.user));",
+                                        "params":{
+                                             "user" : currentUser
+                                        }
+                                   }
+                              }
+                         });
+                         debug.log("The response from update " + JSON.stringify(response));                    
                     }
                     else{
                          //Current user does not like item, so nothing to unlike
                          //Dont do anything and return ok? Check piazza post
                     }
                }
-
-
                debug.log("Amount of likes in item is now " + JSON.stringify(getItemResult.item.property));
                debug.log("Updated list of likers " + JSON.stringify(getItemResult.usersWhoLiked));
                debug.log("Updated array object of likers " + usersLiked);
