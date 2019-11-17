@@ -115,8 +115,10 @@ module.exports={
           if(following || following == undefined || following == 'true'){
                debug.log("Check if there is a current user when 'following' marked true in search: " + currentUser)
                if(currentUser){
+                    debug.log("current user in following field check for search is " + currentUser);
                     let url = env.baseUrl + "/user/" + currentUser +  '/following'
                     followingArray = (await axios.get(url)).data.users;
+                    debug.log("following Array" + followingArray);
                     let followstr = ''
                     // for(let i = 0; i < followingArray.length;i++){
                     //      followstr = followingArray[i] + " ";
@@ -127,6 +129,7 @@ module.exports={
                               fields: ["username"]
                          }
                     })
+                    debug.log(queryBody);
                }
                else{
                     debug.log("not authorized, cant use following in search");
@@ -159,15 +162,14 @@ module.exports={
                     }
                });
           }
-          /*
-          if(parent != "none" || parent != undefined){
+          
+          if(parent != undefined){
                queryBody.query.bool.must.push({
                     match: {
                          id : parent 
                     }
                });
           }
-          */
 
           if(replies === false){
                queryBody.query.bool.must_not.push({
@@ -225,7 +227,7 @@ module.exports={
                limit = 50;
           }
           if(limit > 200){
-               debug.lot("to large");
+               debug.log("to large");
                limit = 200;
           }
           debug.log("username" + username)
@@ -361,7 +363,7 @@ module.exports={
                                    "retweeted": getItemResult.item.retweets,
                                    "property": getItemResult.item.property,
                                    "usersWhoLiked": usersLikedAssignment,
-                                   "media": getItemResult.item.media,
+                                   "media": getItemResult.item.media
                               }
                          };
                          
