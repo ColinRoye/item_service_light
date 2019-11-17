@@ -57,7 +57,7 @@ module.exports={
           debug.log("DATABASE_DELETE: deleteItemById")
           getItemResult = itemIn
           debug.log(JSON.stringify(getItemResult))
-          if(getItemResult.item.childType === "retweet") {
+          if(getItemResult.item.childType === "retweet" && getItemResult.item.parent) {
             debug.log("DELETEING RETWEET BITCH")
             var res2 = await client.update({
                               index: index,
@@ -70,7 +70,7 @@ module.exports={
                                         }
                                    }
                               }
-                  });
+                  }).catch((e)=>{console.log(e)});
           }
 
 
