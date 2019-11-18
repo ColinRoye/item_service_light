@@ -29,7 +29,21 @@ app.use(bodyParser.json());
 // require('./src/schema');
 app.use(require('./src/routes'));
 
+var fs = require('fs')
+var morgan = require('morgan')
+var path = require('path')
 
-
+morgan(':method :url :status :res[content-length] - :response-time ms')
+ 
+ 
+// create a write stream (in append mode)
+var accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), { flags: 'a' })
+ 
+// setup the logger
+app.use(morgan('combined', { stream: accessLogStream }))
+ 
+app.get('/', function (req, res) {
+  res.send('hello, world!')
+})
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))

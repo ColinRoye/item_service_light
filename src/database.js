@@ -16,6 +16,7 @@ module.exports={
           let error;
           let item;
           //post to image_service
+          await client.indices.refresh({ index: index })
           const response = await client.search({
                index: index,
                type: type,
@@ -68,12 +69,13 @@ module.exports={
           debug.log(JSON.stringify(getItemResult))
           if(getItemResult.item.childType === "retweet" && getItemResult.item.parent) {
             debug.log("DELETEING RETWEET BITCH")
+            await client.indices.refresh({ index: index })
             var res2 = await client.update({
                               index: index,
                               id: getItemResult.item.parent,
                               body:{
                                    "script": {
-                                        "source":"ctx._source.retweeted--; ctx._source.usersWhoLiked.add(params.user)",
+                                        "source":"ctx._source.retweeted--;",
                                         "params":{
                                              "user" : username
                                         }
@@ -82,7 +84,7 @@ module.exports={
                   }).catch((e)=>{console.log(e)});
           }
 
-
+          await client.indices.refresh({ index: index })
           const response = await client.deleteByQuery({
                index: index,
                type: type,
@@ -106,7 +108,14 @@ module.exports={
                numDeleted: response.body.deleted,
                error: error
           }
-
+	  if(getItemResult && getItemResult.item && getItemResult.item.media){
+		  console.log("IN MEDIA DEL COND");
+		  for(let i = 0; i < getItemResult.item.media.length; i++){
+		  	console.log("DEL MEDIA LOOP");
+			console.log("hackguy.cse356.compas.cs.stonybrook.edu/media/" + getItemResult.item.media[i]);
+			await axios.delete("http://hackguy.cse356.compas.cs.stonybrook.edu/media/" + getItemResult.item.media[i]).catch((e)=>{});
+		  }
+	  }
           debug.log(JSON.stringify(result));
           return result;
      },
@@ -190,7 +199,7 @@ module.exports={
                    }
                })
           }
-          
+
           if(hasMedia){
                queryBody.query.bool.must_not.push({
                     match : {
@@ -198,11 +207,11 @@ module.exports={
                     }
                });
           }
-          
+
           if(parent != undefined){
                queryBody.query.bool.must.push({
                     match: {
-                         id : parent
+                         parent : parent
                     }
                });
           }
@@ -220,13 +229,15 @@ module.exports={
 
           }
           else if(rank === "interest" || rank == undefined){
-               queryBody.sort = [{"property.likes" : "desc"}]
+               queryBody.sort = [{"property.likes" : "desc"},
+				 {"retweeted":"desc"}]
           }
-          
+
 
           //TODO
           debug.log("queryBody" + JSON.stringify(queryBody))
           let test = "testExample test"
+          await client.indices.refresh({ index: index })
           const response = await client.search({
                index: index,
                type: type,
@@ -242,7 +253,7 @@ module.exports={
           });
           debug.log(JSON.stringify(response))
 	     if(response){
-               return response.body.hits.hits.map((elm)=>{
+               let arr =  response.body.hits.hits.map((elm)=>{
                     let ret = elm._source;
                     ret.id = elm._id;
                     var convertDate = new Date(ret.timestamp);
@@ -254,9 +265,16 @@ module.exports={
                     debug.log("ret is " + ret);
 	               return ret;
 	          })
-          }else{
-               return []
-          }
+		if(rank==="interest" || !rank){
+		     arr = arr.sort(function(a, b){
+  			var x = a.property.likes + a.retweeted ; var y = b.property.likes + b.retweeted;
+  			return ((y < x) ? -1 : ((y > x) ? 1 : 0));
+ 		     });
+		}
+		return arr	
+          	}else{
+              		 return []
+          	}
      },
 
      searchByUsername: async (username, limit)=>{
@@ -272,6 +290,7 @@ module.exports={
                limit = 200;
           }
           debug.log("username" + username)
+          await client.indices.refresh({ index: index })
           const response = await client.search({
                index: index,
                type: type,
@@ -310,6 +329,7 @@ module.exports={
                media = item.media;
           }
           debug.log("before adding item, " + JSON.stringify(item));
+          await client.indices.refresh({ index: index })
           const response = await client.index({
                index: index,
                type: type,
@@ -335,7 +355,7 @@ module.exports={
                     debug.log(id);
                }
           }
-          
+
           let result = {
                status: status,
                id: id,
@@ -345,6 +365,7 @@ module.exports={
           return result;
      },
      getAll: async ()=>{
+       await client.indices.refresh({ index: index })
 	const response = await client.search({
                index: index,
                type: type,
@@ -376,7 +397,7 @@ module.exports={
                var userAlreadyLiked = usersLiked.includes(currentUser)
                if(like === true || like === "true"){
                     debug.log("Like field is " + like);
-                    
+
                     debug.log("userAlreadyLiked " + userAlreadyLiked);
                     debug.log("usersLiked " + usersLiked);
                     if(userAlreadyLiked){    //Current user already has this item liked
@@ -385,6 +406,7 @@ module.exports={
                     }
                     else{    //Modify DB, as user now likes this item
                          debug.log("User does not exist in array, so add it");
+                         await client.indices.refresh({ index: index })
                          var response = await client.update({
                               index: index,
                               id,
@@ -405,6 +427,7 @@ module.exports={
 
                     if(userAlreadyLiked){
                          debug.log("Time to unlike item");
+                         await client.indices.refresh({ index: index })
                          var response = await client.update({
                               index: index,
                               id,
@@ -417,7 +440,7 @@ module.exports={
                                    }
                               }
                          });
-                         debug.log("The response from update " + JSON.stringify(response));                    
+                         debug.log("The response from update " + JSON.stringify(response));
                     }
                     else{
                          //Current user does not like item, so nothing to unlike
@@ -440,12 +463,13 @@ module.exports={
           getItemResult = await module.exports.getItemById(id)
           debug.log("getitem res: " + JSON.stringify(getItemResult));
           if(getItemResult && getItemResult.item){
+            await client.indices.refresh({ index: index })
             var response = await client.update({
                               index: index,
                               id:id,
                               body:{
                                    "script": {
-                                        "source":"ctx._source.retweeted++; ctx._source.usersWhoLiked.add(params.user)",
+                                        "source":"ctx._source.retweeted++;",
                                         "params":{
                                              "user" : currentUser
                                         }
