@@ -5,7 +5,8 @@
   "main": "service.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "docker-compose -f docker-compose-dev.yml up"
+    "start": "node server -p 3002",
+    "start2": "node server -p 3005"
   },
   "author": "Colin W. Roye",
   "license": "ISC",

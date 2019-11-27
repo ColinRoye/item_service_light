@@ -16,7 +16,6 @@ module.exports={
           let error;
           let item;
           //post to image_service
-          debug.log("id of item to get" + id);
           await client.indices.refresh({ index: index })
           const response = await client.search({
                index: index,
@@ -229,13 +228,9 @@ module.exports={
                queryBody.sort =  [{"timestamp" : "desc"}]
 
           }
-          /*
           else if(rank === "interest" || rank == undefined){
                queryBody.sort = [{"property.likes" : "desc"},
 				 {"retweeted":"desc"}]
-          }*/
-          else if(rank ==="interest" || rank == undefined){
-               queryBody.sort = [{"interest" : "desc"}]
           }
 
 
@@ -335,9 +330,8 @@ module.exports={
                media = item.media;
           }
           debug.log("before adding item, " + JSON.stringify(item));
-          //await client.indices.refresh({ index: index })
-          //await
-          const response = await client.index({//await client.index({
+//          await client.indices.refresh({ index: index })
+          const response = await client.index({
                index: index,
                type: type,
                body: {
@@ -346,23 +340,19 @@ module.exports={
                     username: item.username,
                     timestamp: item.timestamp,
                     retweeted: 0,
-                    interest: 0,
                     property: { likes: 0 },
                     usersWhoLiked: [],
                     media: media,
                     parent: item.parent
                  }
-          })
-          
-          .catch((e)=>{
+          }).catch((e)=>{
                debug.log("Error adding");
                debug.log(e);
                status = env.statusError;
                error = "error";
           })
           if(response){
-          //await
-  	      client.indices.refresh({ index: index })  
+  	      await client.indices.refresh({ index: index })  
 	      debug.log(JSON.stringify(response.body) + "resp") 
               if(response.body){
                     id = response.body._id
@@ -370,31 +360,13 @@ module.exports={
                }
     		debug.log("ok" +  response); 
          }
-          //.catch((e)=>{
-              // debug.log("Error adding");
-              // debug.log(e);
-              // status = env.statusError;
-              // error = "error";
-          //})
-          //if(response){
-          //await
-  	      //client.indices.refresh({ index: index })  
-	      //debug.log(JSON.stringify(response.body) + "resp") 
-              //if(response.body){
-               //     id = response.body._id
-               //     debug.log(id);
-               //}
-    		//debug.log("ok" +  response); 
-         //}
-          debug.log("id from response" + response.body._id)
-	     status = env.statusOk;
+
           let result = {
                status: status,
-               //id: item.id,
-               id: response.body._id,
+               id: id,
                error: error
           }
-          //debug.log(JSON.stringify(response));
+          debug.log(JSON.stringify(response));
           return result;
      },
      getAll: async ()=>{
@@ -445,7 +417,7 @@ module.exports={
                               id,
                               body:{
                                    "script": {
-                                        "source":"ctx._source.property.likes++; ctx._source.interest++; ctx._source.usersWhoLiked.add(params.user)",
+                                        "source":"ctx._source.property.likes++; ctx._source.usersWhoLiked.add(params.user)",
                                         "params":{
                                              "user" : currentUser
                                         }
@@ -466,7 +438,7 @@ module.exports={
                               id,
                               body:{
                                    "script": {
-                                        "source": "ctx._source.property.likes--; ctx._source.interest--; ctx._source.usersWhoLiked.remove(ctx._source.usersWhoLiked.indexOf(params.user));",
+                                        "source": "ctx._source.property.likes--; ctx._source.usersWhoLiked.remove(ctx._source.usersWhoLiked.indexOf(params.user));",
                                         "params":{
                                              "user" : currentUser
                                         }
@@ -496,13 +468,13 @@ module.exports={
           getItemResult = await module.exports.getItemById(id)
           debug.log("getitem res: " + JSON.stringify(getItemResult));
           if(getItemResult && getItemResult.item){
-            //await client.indices.refresh({ index: index })
+            await client.indices.refresh({ index: index })
             var response = await client.update({
                               index: index,
                               id:id,
                               body:{
                                    "script": {
-                                        "source":"ctx._source.retweeted++; ctx._source.interest++;",
+                                        "source":"ctx._source.retweeted++;",
                                         "params":{
                                              "user" : currentUser
                                         }

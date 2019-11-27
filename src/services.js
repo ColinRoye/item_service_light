@@ -10,10 +10,12 @@ module.exports={
 	      return await db.getAll();
      },
      retweet: async (parent, username)=>{
-       db.retweet(parent, username)
+          //added await
+       await db.retweet(parent, username)
      },
      addItem: async (content, childType, parent, media, username)=>{
-        let id = uuid();
+       debug.log("ADDITEM SERVICE") 
+       //let id = uuid();
 	      let ret = {};
 
 	      if(!content){
@@ -26,14 +28,15 @@ module.exports={
             username: username,
             parent: parent,
             media: media,
-            timestamp: (new Date()),
-            id: id
+            timestamp: (new Date())
+            //id: id
         }
         console.log("before adding item, this is the item body: " + JSON.stringify(item));
         let url = env.baseUrl + "/used/" + media + "/" + username;
         let check = -1;
         if(media){
           for(let i=0; i < media.length; i++){
+               //await
             check = (await axios.get('http://hackguy.cse356.compas.cs.stonybrook.edu' + "/used/"+media[i]+'/'+username)).data.used
 
             if(check !== '0'){
@@ -46,7 +49,10 @@ module.exports={
           }
         }
 
+        /*
+        serve multiple requests, and return at once
 
+        */
         ret = await db.addItem(item);
         return ret;
     },
@@ -83,7 +89,8 @@ module.exports={
           return db.search(timestamp, limit, username, following, currentUser, queryString, rank, parent, replies, hasMedia)
      },
      authorize: (cookie)=>{
-          return (cookie !== "" && cookie);
+	  debug.log("cookie " + (cookie !== "" && cookie !== undefined));
+          return (cookie !== "" && cookie !== undefined);
      },
      searchByUsername: (username, limit)=>{
           return db.searchByUsername(username, limit)

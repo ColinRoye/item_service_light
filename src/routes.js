@@ -9,23 +9,27 @@ const service = require("./services");
 
 router.post('/additem', async (req, res, next)=>{
      if(service.authorize(req.cookies["auth"])){
+	  debug.log("authorized")
           let args = req.body;
 	  debug.log(JSON.stringify(args))
           let username = req.cookies["auth"];
 
+          //await
           let ret = await service.addItem(args.content, args.childType, args.parent, args.media, username);
-
-	        ret.status = ret.status.status
+          debug.log("return in routes "  + ret);
+	     ret.status = ret.status.status
           if(args.childType === 'retweet'){
-            service.retweet(args.parent, req.cookies["auth"]);
+               //added await
+            await service.retweet(args.parent, req.cookies["auth"]);
           }
-          ret.error = "adf"
+          ret.error = "anything"
           res.send(ret);
      }else{
 	  debug.log("fail");
           res.send({status:"error", "error":"Not Authorized"})
      }
 });
+
 router.get('/item/:id', async (req, res, next)=>{
      let args = req.params;
      let ret = await service.getItemById(args.id);
