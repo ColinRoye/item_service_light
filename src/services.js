@@ -14,8 +14,8 @@ module.exports={
        await db.retweet(parent, username)
      },
      addItem: async (content, childType, parent, media, username)=>{
-       debug.log("ADDITEM SERVICE") 
-       //let id = uuid();
+       debug.log("ADDITEM SERVICE")
+        let id = uuid();
 	      let ret = {};
 
 	      if(!content){
@@ -28,8 +28,8 @@ module.exports={
             username: username,
             parent: parent,
             media: media,
-            timestamp: (new Date())
-            //id: id
+            timestamp: (new Date()),
+            id: id
         }
         console.log("before adding item, this is the item body: " + JSON.stringify(item));
         let url = env.baseUrl + "/used/" + media + "/" + username;

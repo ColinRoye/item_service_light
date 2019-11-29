@@ -276,7 +276,7 @@ module.exports={
   			return ((y < x) ? -1 : ((y > x) ? 1 : 0));
  		     });
 		}
-		return arr	
+		return arr
           	}else{
               		 return []
           	}
@@ -328,6 +328,7 @@ module.exports={
           let error;
           let id;
           var media;
+
           if(!item.media){
                media = "empty";
           }
@@ -335,11 +336,11 @@ module.exports={
                media = item.media;
           }
           debug.log("before adding item, " + JSON.stringify(item));
-          //await client.indices.refresh({ index: index })
-          //await
-          const response = await client.index({//await client.index({
+
+          const response = await client.index({
                index: index,
                type: type,
+               id: item.id,
                body: {
                     content: item.content,
                     childType: item.childType,
@@ -353,48 +354,19 @@ module.exports={
                     parent: item.parent
                  }
           })
-          
           .catch((e)=>{
                debug.log("Error adding");
                debug.log(e);
-               status = env.statusError;
+               // status = env.statusError;
                error = "error";
           })
-          if(response){
-          //await
-  	      client.indices.refresh({ index: index })  
-	      debug.log(JSON.stringify(response.body) + "resp") 
-              if(response.body){
-                    id = response.body._id
-                    debug.log(id);
-               }
-    		debug.log("ok" +  response); 
-         }
-          //.catch((e)=>{
-              // debug.log("Error adding");
-              // debug.log(e);
-              // status = env.statusError;
-              // error = "error";
-          //})
-          //if(response){
-          //await
-  	      //client.indices.refresh({ index: index })  
-	      //debug.log(JSON.stringify(response.body) + "resp") 
-              //if(response.body){
-               //     id = response.body._id
-               //     debug.log(id);
-               //}
-    		//debug.log("ok" +  response); 
-         //}
-          debug.log("id from response" + response.body._id)
-	     status = env.statusOk;
+
+	        status = env.statusOk;
           let result = {
                status: status,
-               //id: item.id,
-               id: response.body._id,
+               id: item.id,
                error: error
           }
-          //debug.log(JSON.stringify(response));
           return result;
      },
      getAll: async ()=>{
