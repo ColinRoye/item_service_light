@@ -360,6 +360,8 @@ module.exports={
                // status = env.statusError;
                error = "error";
           })
+          debug.log("parent " + item.parent)
+          debug.log("childType " + item.childType)
 
 	        status = env.statusOk;
           let result = {
