@@ -12,10 +12,7 @@ var port = 3000
 
 
 
-var apicache = require('apicache')
-var cache = apicache.middleware
 
-app.use(cache('5 minutes'))
 
 
 var fs = require('fs')

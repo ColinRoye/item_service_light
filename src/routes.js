@@ -5,6 +5,9 @@ const debug = require("./debug");
 const env = require("./env");
 const service = require("./services");
 
+var apicache = require('apicache')
+var cache = apicache.middleware
+
 
 
 router.post('/additem', async (req, res, next) => {
@@ -71,7 +74,7 @@ router.delete('/item/:id', async (req, res, next) => {
 
 });
 
-router.post('/search', async (req, res, next) => {
+router.post('/search', cache('5 minutes'), async (req, res, next) => {
   let args = req.body;
   debug.log(req.cookies['auth'])
   console.log(JSON.stringify(args));
