@@ -8,6 +8,8 @@ const service = require("./services");
 var apicache = require('apicache')
 var cache = apicache.middleware
 
+apicache.clear()
+
 
 
 router.post('/additem', async (req, res, next) => {
@@ -36,7 +38,7 @@ router.post('/additem', async (req, res, next) => {
   }
 });
 
-router.get('/item/:id', cache('10 minutes'), async (req, res, next) => {
+router.get('/item/:id', cache('2 minutes'), async (req, res, next) => {
   let args = req.params;
   let ret = await service.getItemById(args.id);
   console.log("ret in get item" + JSON.stringify(ret));
@@ -74,7 +76,7 @@ router.delete('/item/:id', async (req, res, next) => {
 
 });
 
-router.post('/search', cache('10 minutes'), async (req, res, next) => {
+router.post('/search', cache('2 minutes'), async (req, res, next) => {
   let args = req.body;
   debug.log(req.cookies['auth'])
   console.log(JSON.stringify(args));
@@ -91,7 +93,7 @@ router.get('/auth', async (req, res, next) => {
   res.send("test: " + req.cookies["auth"]);
 });
 
-router.get('/items/:username/:limit', cache('10 minutes'), async (req, res, next) => {
+router.get('/items/:username/:limit', cache('2 minutes'), async (req, res, next) => {
   let args = req.params;
   console.log(JSON.stringify(args));
   let ret = await service.searchByUsername(args.username, args.limit);
