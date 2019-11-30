@@ -428,9 +428,9 @@ module.exports = {
           //Return status ok, since current user already has this item liked
         } else { //Modify DB, as user now likes this item
           debug.log("User does not exist in array, so add it");
-          await client.indices.refresh({
-            index: index
-          })
+          // await client.indices.refresh({
+          //   index: index
+          // })
           var response = await client.update({
             index: index,
             id,
@@ -450,9 +450,9 @@ module.exports = {
 
         if (userAlreadyLiked) {
           debug.log("Time to unlike item");
-          await client.indices.refresh({
-            index: index
-          })
+          // await client.indices.refresh({
+          //   index: index
+          // })
           var response = await client.update({
             index: index,
             id,
