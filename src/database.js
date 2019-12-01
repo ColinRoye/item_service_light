@@ -46,18 +46,19 @@ module.exports = {
       item = response.body.hits.hits[0]._source;
       debug.log(JSON.stringify(response.body.hits.hits[0]))
       debug.log("item: " + JSON.stringify(item));
+      if (item) {
+        item.id = id;
+        debug.log("the timestamp is " + item.timestamp);
+        var convertDate = new Date(item.timestamp);
+        var unixConvertDate = convertDate / 1000;
+        debug.log("change timestamp" + convertDate);
+        debug.log("converted to " + unixConvertDate);
+        item.timestamp = unixConvertDate;
+        //item.timestamp = item.timestamp/1000;
+      }
     }
     console.log("the item is " + JSON.stringify(item));
-    if (item) {
-      item.id = id;
-      debug.log("the timestamp is " + item.timestamp);
-      var convertDate = new Date(item.timestamp);
-      var unixConvertDate = convertDate / 1000;
-      debug.log("change timestamp" + convertDate);
-      debug.log("converted to " + unixConvertDate);
-      item.timestamp = unixConvertDate;
-      //item.timestamp = item.timestamp/1000;
-    }
+    
     let result = {
       status: status,
       item: item,
@@ -77,15 +78,15 @@ module.exports = {
     debug.log(JSON.stringify(getItemResult))
     if (getItemResult.item.childType === "retweet" && getItemResult.item.parent) {
       debug.log("DELETEING RETWEET BITCH")
-      await client.indices.refresh({
+      /*await client.indices.refresh({
         index: index
-      })
+      })*/
       var res2 = await client.update({
         index: index,
         id: getItemResult.item.parent,
         body: {
           "script": {
-            "source": "ctx._source.retweeted--;",
+            "source": "ctx._source.retweeted--; ctx._source.interest--;",
             "params": {
               "user": username
             }
@@ -95,10 +96,10 @@ module.exports = {
         console.log(e)
       });
     }
-
+    /*
     await client.indices.refresh({
       index: index
-    })
+    })*/
     const response = await client.deleteByQuery({
       index: index,
       type: type,
@@ -127,7 +128,8 @@ module.exports = {
       for (let i = 0; i < getItemResult.item.media.length; i++) {
         console.log("DEL MEDIA LOOP");
         console.log("hackguy.cse356.compas.cs.stonybrook.edu/media/" + getItemResult.item.media[i]);
-        await axios.delete("http://hackguy.cse356.compas.cs.stonybrook.edu/media/" + getItemResult.item.media[i]).catch((e) => {});
+        //await 
+        axios.delete("http://hackguy.cse356.compas.cs.stonybrook.edu/media/" + getItemResult.item.media[i]).catch((e) => {});
       }
     }
     debug.log(JSON.stringify(result));
@@ -409,34 +411,43 @@ module.exports = {
     }
   },
   likeItem: async (id, like, currentUser) => {
+    let status = env.statusOk;
+    let error;
     getItemResult = await module.exports.getItemById(id)
     //console.log("get Item Result is " + JSON.stringify(getItemResult));
     //console.log("item in get itemresult is " + JSON.stringify(getItemResult.item.property));
-
+    debug.log("in Like Item");
     //If Item exists
     if (getItemResult.item) {
       debug.log("Previous likes for this item " + JSON.stringify(getItemResult.item.itemusersWhoLiked));
       var usersLiked = JSON.parse(JSON.stringify(getItemResult.item.usersWhoLiked));
       var userAlreadyLiked = usersLiked.includes(currentUser)
+      
       if (like === true || like === "true") {
         debug.log("Like field is " + like);
 
         debug.log("userAlreadyLiked " + userAlreadyLiked);
         debug.log("usersLiked " + usersLiked);
+        
         if (userAlreadyLiked) { //Current user already has this item liked
           debug.log("current user already exists in array");
           //Return status ok, since current user already has this item liked
+          /*let result = {
+            status: status,
+            error: error
+          }
+          return result*/
         } else { //Modify DB, as user now likes this item
           debug.log("User does not exist in array, so add it");
-          // await client.indices.refresh({
-          //   index: index
-          // })
+           await client.indices.refresh({
+             index: index
+           })
           var response = await client.update({
             index: index,
             id,
             body: {
               "script": {
-                "source": "ctx._source.property.likes++; ctx._source.interest++; ctx._source.usersWhoLiked.add(params.user)",
+                "source": "ctx._source.property.likes++; ctx._source.interest++; ctx._source.usersWhoLiked.add(params.user);",
                 "params": {
                   "user": currentUser
                 }
@@ -450,9 +461,9 @@ module.exports = {
 
         if (userAlreadyLiked) {
           debug.log("Time to unlike item");
-          // await client.indices.refresh({
-          //   index: index
-          // })
+           await client.indices.refresh({
+             index: index
+           })
           var response = await client.update({
             index: index,
             id,
@@ -469,6 +480,13 @@ module.exports = {
         } else {
           //Current user does not like item, so nothing to unlike
           //Dont do anything and return ok? Check piazza post
+          /*let result = {
+            status: status,
+            error: error
+          }
+          return{}
+          return result*/
+          return {}
         }
       }
       debug.log("Amount of likes in item is now " + JSON.stringify(getItemResult.item.property));
@@ -477,10 +495,21 @@ module.exports = {
       //console.log("Num likes for this item is now", item.property.likes);
 
     } else {
+      //added thisssssss
+      let result = {
+        status: env.statusError,
+        error: error
+      }
+      return result
       //Item does not exist
       //Return error
     }
-    return {}
+    let result = {
+      status: status,
+      error: error
+    }
+    return result
+    //return {}
   },
   retweet: async (id, currentUser) => {
     getItemResult = await module.exports.getItemById(id)
@@ -500,6 +529,7 @@ module.exports = {
         }
       });
     } else {
+     
       //Item does not exist
       //Return error
     }

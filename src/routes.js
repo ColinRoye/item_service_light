@@ -38,7 +38,7 @@ router.post('/additem', async (req, res, next) => {
   }
 });
 
-router.get('/item/:id', cache('2 minutes'), async (req, res, next) => {
+router.get('/item/:id', async (req, res, next) => {
   let args = req.params;
   let ret = await service.getItemById(args.id);
   console.log("ret in get item" + JSON.stringify(ret));
@@ -123,6 +123,10 @@ router.post('/item/:id/like', async (req, res, next) => {
       status: env.statusOk.status,
       msg: "Item liked/unliked!"
     };
+    /*ret = {
+      status: ret.status.status,
+      msg: "Item liked/unliked"
+    }*/
     res.send(ret);
   }
 });
