@@ -38,7 +38,7 @@ router.post('/additem', async (req, res, next) => {
   }
 });
 
-router.get('/item/:id', cache('2 minutes'), async (req, res, next) => {
+router.get('/item/:id', cache('4 minutes'), async (req, res, next) => {
   let args = req.params;
   let ret = await service.getItemById(args.id);
   console.log("ret in get item" + JSON.stringify(ret));
@@ -93,7 +93,7 @@ router.get('/auth', async (req, res, next) => {
   res.send("test: " + req.cookies["auth"]);
 });
 
-router.get('/items/:username/:limit', cache('2 minutes'), async (req, res, next) => {
+router.get('/items/:username/:limit', cache('4 minutes'), async (req, res, next) => {
   let args = req.params;
   console.log(JSON.stringify(args));
   let ret = await service.searchByUsername(args.username, args.limit);
