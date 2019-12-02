@@ -402,9 +402,9 @@ module.exports = {
   },
   getAll: async () => {
     
-    /*await client.indices.refresh({
+    await client.indices.refresh({
       index: index
-    })*/
+    })
     const response = await client.search({
       index: index,
       type: type,
