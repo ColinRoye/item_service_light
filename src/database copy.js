@@ -23,10 +23,9 @@ module.exports = {
     let item;
     //post to image_service
     debug.log("id of item to get" + id);
-    /*
     await client.indices.refresh({
       index: index
-    })*/
+    })
     const response = await client.search({
       index: index,
       type: type,
@@ -308,10 +307,9 @@ module.exports = {
       limit = 200;
     }
     debug.log("username" + username)
-    /*
     await client.indices.refresh({
       index: index
-    })*/
+    })
     const response = await client.search({
       index: index,
       type: type,
@@ -377,10 +375,9 @@ module.exports = {
         error = "error";
       })
     if (response) {
-      /*
       await client.indices.refresh({
         index: index
-      })*/
+      })
       debug.log(JSON.stringify(response.body) + "resp")
       if (response.body) {
         id = response.body._id
@@ -401,7 +398,6 @@ module.exports = {
     return result;
   },
   getAll: async () => {
-    
     await client.indices.refresh({
       index: index
     })
@@ -455,9 +451,9 @@ module.exports = {
           return result*/
         } else { //Modify DB, as user now likes this item
           debug.log("User does not exist in array, so add it");
-          /*await client.indices.refresh({
+          await client.indices.refresh({
             index: index
-          })*/
+          })
           var response = await client.update({
             index: index,
             id,
@@ -477,9 +473,9 @@ module.exports = {
 
         if (userAlreadyLiked) {
           debug.log("Time to unlike item");
-          /*await client.indices.refresh({
+          await client.indices.refresh({
             index: index
-          })*/
+          })
           var response = await client.update({
             index: index,
             id,
