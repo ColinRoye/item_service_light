@@ -21,7 +21,7 @@ module.exports = {
   },
   addItem: async (content, childType, parent, media, username) => {
     debug.log("ADDITEM SERVICE")
-    let id = translator.new();
+    // let id = translator.new();
     let ret = {};
 
     if (!content) {
@@ -34,10 +34,9 @@ module.exports = {
       username: username,
       parent: parent,
       media: media,
-      timestamp: (new Date()),
-      id: id
+      timestamp: (new Date())
     }
-    console.log("before adding item, this is the item body: " + JSON.stringify(item));
+    debug.log("before adding item, this is the item body: " + JSON.stringify(item));
     let url = env.baseUrl + "/used/" + media + "/" + username;
     let check = -1;
     if (media) {
