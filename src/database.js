@@ -6,7 +6,7 @@ const {
 } = require('@elastic/elasticsearch')
 const client = new Client({
   //node: 'http://130.245.171.109:9200'
-  node: 'http://34.69.125.206:9200'
+  node: 'http://34.69.203.99:9200'
 })
 const service = require("./services");
 const index = "tests205";
@@ -402,9 +402,9 @@ module.exports = {
   },
   getAll: async () => {
     
-    await client.indices.refresh({
+    /*await client.indices.refresh({
       index: index
-    })
+    })*/
     const response = await client.search({
       index: index,
       type: type,
