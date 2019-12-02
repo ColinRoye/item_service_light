@@ -21,7 +21,7 @@ router.post('/additem', async (req, res, next) => {
 
     //await
     let ret = await service.addItem(args.content, args.childType, args.parent, args.media, username);
-    debug.log("return in routes " + ret);
+    debug.log("return in routes " + JSON.stringify(ret));
     ret.status = ret.status.status
     if (ret.status == 'OK' && args.childType === 'retweet') {
       //added await

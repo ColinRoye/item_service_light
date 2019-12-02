@@ -58,7 +58,7 @@ module.exports = {
       }
     }
     console.log("the item is " + JSON.stringify(item));
-    
+
     let result = {
       status: status,
       item: item,
@@ -128,7 +128,7 @@ module.exports = {
       for (let i = 0; i < getItemResult.item.media.length; i++) {
         console.log("DEL MEDIA LOOP");
         console.log("hackguy.cse356.compas.cs.stonybrook.edu/media/" + getItemResult.item.media[i]);
-        //await 
+        //await
         axios.delete("http://hackguy.cse356.compas.cs.stonybrook.edu/media/" + getItemResult.item.media[i]).catch((e) => {});
       }
     }
@@ -352,7 +352,6 @@ module.exports = {
     const response = await client.index({
         index: index,
         type: type,
-        id: item.id,
         body: {
           content: item.content,
           childType: item.childType,
@@ -374,13 +373,25 @@ module.exports = {
         status = env.statusError;
         error = "error";
       })
+    if (response) {
+      await client.indices.refresh({
+        index: index
+      })
+      debug.log(JSON.stringify(response.body) + "resp")
+      if (response.body) {
+        id = response.body._id
+        debug.log(id);
+      }
+      debug.log("ok" + response);
+    }
+
     debug.log("parent " + item.parent)
     debug.log("childType " + item.childType)
 
     status = env.statusOk;
     let result = {
       status: status,
-      id: item.id,
+      id: response.body._id,
       error: error
     }
     return result;
@@ -422,13 +433,13 @@ module.exports = {
       debug.log("Previous likes for this item " + JSON.stringify(getItemResult.item.itemusersWhoLiked));
       var usersLiked = JSON.parse(JSON.stringify(getItemResult.item.usersWhoLiked));
       var userAlreadyLiked = usersLiked.includes(currentUser)
-      
+
       if (like === true || like === "true") {
         debug.log("Like field is " + like);
 
         debug.log("userAlreadyLiked " + userAlreadyLiked);
         debug.log("usersLiked " + usersLiked);
-        
+
         if (userAlreadyLiked) { //Current user already has this item liked
           debug.log("current user already exists in array");
           //Return status ok, since current user already has this item liked
@@ -439,9 +450,9 @@ module.exports = {
           return result*/
         } else { //Modify DB, as user now likes this item
           debug.log("User does not exist in array, so add it");
-           await client.indices.refresh({
-             index: index
-           })
+          await client.indices.refresh({
+            index: index
+          })
           var response = await client.update({
             index: index,
             id,
@@ -461,9 +472,9 @@ module.exports = {
 
         if (userAlreadyLiked) {
           debug.log("Time to unlike item");
-           await client.indices.refresh({
-             index: index
-           })
+          await client.indices.refresh({
+            index: index
+          })
           var response = await client.update({
             index: index,
             id,
@@ -529,7 +540,7 @@ module.exports = {
         }
       });
     } else {
-     
+
       //Item does not exist
       //Return error
     }
